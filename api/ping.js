@@ -1,4 +1,6 @@
-/** Zero-dependency ping — proves Vercel functions are alive */
+/**
+ * Zero-dep ping (root api/). Proves functions work without Mongo/Express.
+ */
 module.exports = (req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');

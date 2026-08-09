@@ -1,10 +1,6 @@
 /**
- * Vercel Express entry (server Root Directory).
- * Restores original path after rewrite and avoids serverless-http hangs on Express 5.
+ * Full API catch-all (Root Directory = server).
  */
-const connectDB = require('../src/config/db');
-const createApp = require('../src/app');
-
 let app;
 let ready;
 
@@ -13,7 +9,6 @@ function restoreUrl(req) {
     req.headers['x-invoke-path'] ||
     req.headers['x-forwarded-uri'] ||
     req.headers['x-vercel-forwarded-path'];
-
   if (headerPath) {
     try {
       const pathOnly = headerPath.startsWith('http')
@@ -24,13 +19,8 @@ function restoreUrl(req) {
         req.url = pathOnly + qs;
       }
     } catch {
-      /* keep req.url */
+      /* keep */
     }
-  }
-
-  // Rewrite destination is often "/api" — recover from originalUrl if present
-  if ((req.url === '/api' || req.url === '/api/') && req.originalUrl?.startsWith('/api/')) {
-    req.url = req.originalUrl;
   }
 }
 
@@ -38,10 +28,12 @@ async function ensureApp() {
   if (app) return app;
   if (!ready) {
     ready = (async () => {
+      const connectDB = require('../src/config/db');
+      const createApp = require('../src/app');
       await Promise.race([
         connectDB(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('MongoDB connect timed out after 8000ms')), 8000)
+          setTimeout(() => reject(new Error('MongoDB connect timed out')), 8000)
         ),
       ]);
       app = createApp();
@@ -64,12 +56,7 @@ module.exports = async (req, res) => {
     if (!res.headersSent) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.end(
-        JSON.stringify({
-          success: false,
-          message: err.message || 'API failed to start',
-        })
-      );
+      res.end(JSON.stringify({ success: false, message: err.message || 'API failed to start' }));
     }
   }
 };
