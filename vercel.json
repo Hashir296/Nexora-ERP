@@ -1,18 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm install --prefix server",
+  "installCommand": "npm install --prefix server && rm -rf node_modules && cp -R server/node_modules ./node_modules",
   "buildCommand": "mkdir -p public && echo Nexora API > public/index.html",
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
       "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "server/**"
+      "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/api/(.*)", "destination": "/api" }
   ]
 }
