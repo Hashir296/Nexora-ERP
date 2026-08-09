@@ -1,9 +1,9 @@
 /**
  * Vercel serverless Express entry for Nexora API.
+ * Catch-all so /api/* paths keep the original URL for Express.
  */
 const path = require('path');
 
-// Prefer root node_modules (hoisted by Vercel installCommand), then server/
 const serverNm = path.join(__dirname, '..', 'server', 'node_modules');
 const rootNm = path.join(__dirname, '..', 'node_modules');
 module.paths.unshift(serverNm, rootNm);
@@ -44,6 +44,17 @@ function getHandler() {
 
 module.exports = async (req, res) => {
   try {
+    // Vercel rewrite to /api can strip the path; restore from headers when needed
+    const original =
+      req.headers['x-forwarded-uri'] ||
+      req.headers['x-invoke-path'] ||
+      req.url;
+    if (original && original !== req.url) {
+      req.url = original.startsWith('http')
+        ? new URL(original).pathname + (new URL(original).search || '')
+        : original;
+    }
+
     const handler = await getHandler();
     return handler(req, res);
   } catch (err) {
@@ -55,7 +66,7 @@ module.exports = async (req, res) => {
         JSON.stringify({
           success: false,
           message: err.message || 'API failed to start',
-          tip: 'Check MONGODB_URI and Network Access (0.0.0.0/0) in Atlas',
+          tip: 'Check MONGODB_URI and Atlas Network Access (0.0.0.0/0)',
         })
       );
     }
