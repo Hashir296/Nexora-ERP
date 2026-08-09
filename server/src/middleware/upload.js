@@ -3,8 +3,13 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../config');
 
-const uploadRoot = path.join(__dirname, '..', '..', config.uploadDir);
-if (!fs.existsSync(uploadRoot)) fs.mkdirSync(uploadRoot, { recursive: true });
+const uploadRoot = process.env.VERCEL
+  ? path.join('/tmp', 'nexora-uploads')
+  : path.join(__dirname, '..', '..', config.uploadDir);
+
+if (!fs.existsSync(uploadRoot)) {
+  fs.mkdirSync(uploadRoot, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadRoot),

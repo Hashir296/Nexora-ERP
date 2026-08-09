@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
-const path = require('path');
 const config = require('./config');
 const { errorHandler } = require('./utils/api');
 const { apiLimiter } = require('./middleware/rateLimit');
@@ -15,9 +14,20 @@ const registry = require('./plugins/registry');
 const { uploadRoot } = require('./middleware/upload');
 const { AuditLog } = require('./models/Platform');
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const allowed = Array.isArray(config.clientUrl) ? config.clientUrl : [config.clientUrl];
+  if (allowed.includes('*') || allowed.includes(origin)) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+  return false;
+}
+
 function createApp() {
   const app = express();
   registerCorePlugins();
+
+  app.set('trust proxy', 1);
 
   app.use(
     helmet({
@@ -28,7 +38,10 @@ function createApp() {
   app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
   app.use(
     cors({
-      origin: config.clientUrl,
+      origin(origin, callback) {
+        if (isOriginAllowed(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true,
     })
   );
@@ -43,6 +56,7 @@ function createApp() {
       success: true,
       message: 'Nexora ERP API healthy',
       plugins: registry.enabled().map((p) => p.id),
+      runtime: process.env.VERCEL ? 'vercel-serverless' : 'node',
     });
   });
 

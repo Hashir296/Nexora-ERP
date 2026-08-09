@@ -1,59 +1,51 @@
-# Nexora ERP (MERN)
+# Nexora ERP — Vercel (Frontend + Backend)
 
-Frontend → **Vercel** · Backend → **Render/Railway** · Database → **MongoDB Atlas**
+Yes: **both frontend and backend can run on Vercel**.
 
-> Do **not** deploy the Express `server` folder on Vercel. It will crash with `FUNCTION_INVOCATION_FAILED` / 500.
+- Frontend = static Vite build (`client/dist`)
+- Backend = serverless Express at `/api` (`api/index.js`)
+- Database = MongoDB Atlas
 
-## Local run
+> Chat realtime (Socket.io) is limited on Vercel serverless. REST API, auth, CRUD, AI, etc. work.
 
-```bash
-cd server
-npm install
-# put Atlas URI in .env as MONGODB_URI
-npm run seed
-npm run dev
+## Deploy on Vercel (one project)
 
-cd ../client
-npm install
-npm run dev
-```
+1. Import GitHub repo `Hashir296/Nexora-ERP`
+2. **Root Directory = repository root** (do **not** set to `client` or `server`)
+3. Framework preset can be Other / Vite — `vercel.json` controls build
+4. Add **Environment Variables**:
 
-- App: http://localhost:5173
-- API: http://localhost:5000
-- Login (after seed): `admin@nexora.local` / `Admin@123`
-
-## 1) Backend on Render (required)
-
-1. Go to [render.com](https://render.com) → New → Web Service → connect `Hashir296/Nexora-ERP`
-2. Root Directory: `server`
-3. Build: `npm install`
-4. Start: `npm start`
-5. Add env vars:
-
-| Key | Value |
-|-----|--------|
-| `MONGODB_URI` | your Atlas `mongodb+srv://...` |
-| `CLIENT_URL` | `https://YOUR-VERCEL-APP.vercel.app` |
-| `COOKIE_SECURE` | `true` |
+| Name | Example |
+|------|---------|
+| `MONGODB_URI` | `mongodb+srv://...@cluster0....mongodb.net/nexora-erp?...` |
 | `JWT_ACCESS_SECRET` | long random string |
 | `JWT_REFRESH_SECRET` | long random string |
+| `CLIENT_URL` | `https://your-app.vercel.app` |
+| `COOKIE_SECURE` | `true` |
 | `NODE_ENV` | `production` |
 | `GOOGLE_API_KEY` | optional |
+| `GOOGLE_AI_MODEL` | `gemini-2.0-flash-lite` |
 
-6. Atlas Network Access: allow `0.0.0.0/0`
-7. After deploy, open `https://YOUR-API.onrender.com/api/health` — should return healthy JSON
+5. **Do not set `VITE_API_URL`** (leave empty) so the app calls same-domain `/api`
+6. Atlas Network Access → allow `0.0.0.0/0`
+7. Deploy
 
-## 2) Frontend on Vercel
+### Verify
 
-1. Vercel → Import `Nexora-ERP`
-2. **Root Directory = `client`** (important)
-3. Framework: Vite · Build: `npm run build` · Output: `dist`
-4. Env:
-   - `VITE_API_URL` = `https://YOUR-API.onrender.com` (no trailing slash)
-5. Redeploy
+- `https://your-app.vercel.app` → login page
+- `https://your-app.vercel.app/api/health` → `{ success: true, ... }`
 
-If you already deployed the whole repo / server and got a serverless crash: change Root Directory to `client`, set `VITE_API_URL`, redeploy.
+### If you already deployed and got 500
 
-## GitHub
+1. Vercel → Project → Settings → **Root Directory = empty / `.`**
+2. Ensure env vars above are set
+3. Redeploy (clear cache if needed)
 
-https://github.com/Hashir296/Nexora-ERP
+## Local development
+
+```bash
+cd server && npm install && npm run dev
+cd client && npm install && npm run dev
+```
+
+Client proxies `/api` → `http://localhost:5000`.
