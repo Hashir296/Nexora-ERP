@@ -10,8 +10,6 @@
     }
   },
   "rewrites": [
-    { "source": "/api/ping", "destination": "/api/ping" },
-    { "source": "/api/health", "destination": "/api/health" },
     { "source": "/api/(.*)", "destination": "/api" }
   ]
 }
