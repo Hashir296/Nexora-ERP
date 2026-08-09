@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "installCommand": "npm install --prefix server",
+  "buildCommand": "mkdir -p public && echo Nexora API > public/index.html",
+  "outputDirectory": "public",
   "functions": {
     "api/index.js": {
       "memory": 1024,
@@ -9,6 +12,7 @@
     }
   },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/api" }
   ]
 }

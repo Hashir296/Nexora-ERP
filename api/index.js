@@ -1,49 +1,54 @@
 /**
- * Vercel serverless entry — Express API (frontend is static from client/dist).
- * Local/dev still uses: node server/src/server.js
+ * Vercel serverless Express entry for Nexora API.
  */
 const path = require('path');
 
-// Resolve server dependencies when invoked from /api
 const serverNodeModules = path.join(__dirname, '..', 'server', 'node_modules');
-if (!module.paths.includes(serverNodeModules)) {
-  module.paths.unshift(serverNodeModules);
-}
+module.paths.unshift(serverNodeModules);
 
+const serverless = require('serverless-http');
 const connectDB = require('../server/src/config/db');
 const createApp = require('../server/src/app');
 
-let appPromise = null;
+let handlerPromise = null;
 
-async function getApp() {
-  if (globalThis.__nexoraApp) return globalThis.__nexoraApp;
-  if (!appPromise) {
-    appPromise = (async () => {
+function getHandler() {
+  if (globalThis.__nexoraHandler) {
+    return Promise.resolve(globalThis.__nexoraHandler);
+  }
+  if (!handlerPromise) {
+    handlerPromise = (async () => {
       await connectDB();
       const app = createApp();
-      globalThis.__nexoraApp = app;
-      return app;
+      const handler = serverless(app, {
+        binary: ['application/octet-stream', 'image/*'],
+      });
+      globalThis.__nexoraHandler = handler;
+      return handler;
     })().catch((err) => {
-      appPromise = null;
+      handlerPromise = null;
       throw err;
     });
   }
-  return appPromise;
+  return handlerPromise;
 }
 
 module.exports = async (req, res) => {
   try {
-    const app = await getApp();
-    return app(req, res);
+    const handler = await getHandler();
+    return handler(req, res);
   } catch (err) {
     console.error('Vercel API bootstrap failed:', err);
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(
-      JSON.stringify({
-        success: false,
-        message: err.message || 'API failed to start',
-      })
-    );
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(
+        JSON.stringify({
+          success: false,
+          message: err.message || 'API failed to start',
+          tip: 'Check MONGODB_URI and other env vars in Vercel project settings',
+        })
+      );
+    }
   }
 };
