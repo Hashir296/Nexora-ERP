@@ -1,41 +1,64 @@
 /**
- * Vercel serverless entry — deploy with Root Directory = `server`
+ * Vercel Express entry (server Root Directory).
+ * Restores original path after rewrite and avoids serverless-http hangs on Express 5.
  */
-const serverless = require('serverless-http');
 const connectDB = require('../src/config/db');
 const createApp = require('../src/app');
 
-let handlerPromise = null;
+let app;
+let ready;
 
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
-    }),
-  ]);
+function restoreUrl(req) {
+  const headerPath =
+    req.headers['x-invoke-path'] ||
+    req.headers['x-forwarded-uri'] ||
+    req.headers['x-vercel-forwarded-path'];
+
+  if (headerPath) {
+    try {
+      const pathOnly = headerPath.startsWith('http')
+        ? new URL(headerPath).pathname
+        : String(headerPath).split('?')[0];
+      if (pathOnly && pathOnly !== '/api' && pathOnly !== '/') {
+        const qs = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+        req.url = pathOnly + qs;
+      }
+    } catch {
+      /* keep req.url */
+    }
+  }
+
+  // Rewrite destination is often "/api" — recover from originalUrl if present
+  if ((req.url === '/api' || req.url === '/api/') && req.originalUrl?.startsWith('/api/')) {
+    req.url = req.originalUrl;
+  }
 }
 
-function getHandler() {
-  if (globalThis.__nexoraHandler) return Promise.resolve(globalThis.__nexoraHandler);
-  if (!handlerPromise) {
-    handlerPromise = (async () => {
-      await withTimeout(connectDB(), 8000, 'MongoDB connect');
-      const handler = serverless(createApp());
-      globalThis.__nexoraHandler = handler;
-      return handler;
+async function ensureApp() {
+  if (app) return app;
+  if (!ready) {
+    ready = (async () => {
+      await Promise.race([
+        connectDB(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('MongoDB connect timed out after 8000ms')), 8000)
+        ),
+      ]);
+      app = createApp();
+      return app;
     })().catch((err) => {
-      handlerPromise = null;
+      ready = null;
       throw err;
     });
   }
-  return handlerPromise;
+  return ready;
 }
 
 module.exports = async (req, res) => {
   try {
-    const handler = await getHandler();
-    return handler(req, res);
+    restoreUrl(req);
+    const expressApp = await ensureApp();
+    return expressApp(req, res);
   } catch (err) {
     console.error('Vercel API bootstrap failed:', err);
     if (!res.headersSent) {
@@ -45,7 +68,6 @@ module.exports = async (req, res) => {
         JSON.stringify({
           success: false,
           message: err.message || 'API failed to start',
-          tip: 'Check MONGODB_URI + Atlas Network Access 0.0.0.0/0',
         })
       );
     }

@@ -3,8 +3,5 @@
   "framework": null,
   "installCommand": "npm install --prefix server",
   "buildCommand": "mkdir -p public && echo Nexora API > public/index.html",
-  "outputDirectory": "public",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ]
+  "outputDirectory": "public"
 }
