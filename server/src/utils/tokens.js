@@ -2,11 +2,13 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 
 function signAccessToken(payload) {
-  return jwt.sign(payload, config.jwt.accessSecret, { expiresIn: config.jwt.accessExpires });
+  const expiresIn = config.jwt.accessExpires || '15m';
+  return jwt.sign(payload, config.jwt.accessSecret, { expiresIn });
 }
 
 function signRefreshToken(payload) {
-  return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpires });
+  const expiresIn = config.jwt.refreshExpires || '7d';
+  return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn });
 }
 
 function verifyAccessToken(token) {
