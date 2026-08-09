@@ -10,7 +10,8 @@ const config = require('../config');
 function setAuthCookies(res, accessToken, refreshToken) {
   const common = {
     httpOnly: true,
-    sameSite: 'lax',
+    // Cross-site (Vercel frontend + separate API host) needs SameSite=None + Secure
+    sameSite: config.cookieSecure ? 'none' : 'lax',
     secure: config.cookieSecure,
   };
   res.cookie('accessToken', accessToken, { ...common, maxAge: 15 * 60 * 1000 });
@@ -18,8 +19,13 @@ function setAuthCookies(res, accessToken, refreshToken) {
 }
 
 function clearAuthCookies(res) {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const common = {
+    httpOnly: true,
+    sameSite: config.cookieSecure ? 'none' : 'lax',
+    secure: config.cookieSecure,
+  };
+  res.clearCookie('accessToken', common);
+  res.clearCookie('refreshToken', common);
 }
 
 function issueTokens(user) {

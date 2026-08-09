@@ -3,9 +3,13 @@ dist/
 build/
 uploads/
 .env
+.env.local
+.env.*.local
 *.log
 .DS_Store
 coverage/
 .vite/
 .npm-cache/
 .tmp/
+server/src/utils/migrate.js
+server/src/utils/_atlas_once.js
