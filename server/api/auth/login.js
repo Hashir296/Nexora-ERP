@@ -1,5 +1,5 @@
 /**
- * Dedicated Vercel function for /api/auth/* (Root Directory = server).
+ * POST /api/auth/login — Root Directory = server
  */
 const connectDB = require('../../src/config/db');
 const createAuthApp = require('../../src/createAuthApp');
@@ -29,16 +29,24 @@ async function ensure() {
 
 module.exports = async (req, res) => {
   try {
+    if (!String(req.url || '').includes('login')) {
+      req.url = '/api/auth/login';
+    } else if (!String(req.url).startsWith('/api/auth')) {
+      req.url = '/api/auth/login';
+    }
     const expressApp = await ensure();
     return expressApp(req, res);
   } catch (err) {
-    console.error('auth function failed:', err);
+    console.error('login function failed:', err);
     if (!res.headersSent) {
+      const origin = req.headers.origin || '';
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.end(JSON.stringify({ success: false, message: err.message || 'Auth API failed' }));
+      if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+      res.end(JSON.stringify({ success: false, message: err.message || 'Login API failed' }));
     }
   }
 };
