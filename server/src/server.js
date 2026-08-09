@@ -15,8 +15,8 @@ async function start() {
   app.set('io', io);
   initSockets(io);
 
-  server.listen(config.port, () => {
-    console.log(`Nexora ERP API running on http://localhost:${config.port}`);
+  server.listen(config.port, '0.0.0.0', () => {
+    console.log(`Nexora ERP API running on http://0.0.0.0:${config.port}`);
   });
 }
 

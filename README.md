@@ -1,14 +1,16 @@
 # Nexora ERP (MERN)
 
-Core platform + plugins. MongoDB Atlas ready. Frontend deploys on Vercel; API on Render/Railway.
+Frontend → **Vercel** · Backend → **Render/Railway** · Database → **MongoDB Atlas**
+
+> Do **not** deploy the Express `server` folder on Vercel. It will crash with `FUNCTION_INVOCATION_FAILED` / 500.
 
 ## Local run
 
 ```bash
 cd server
 npm install
-cp .env.example .env   # put your Atlas URI in MONGODB_URI
-npm run seed           # optional demo data
+# put Atlas URI in .env as MONGODB_URI
+npm run seed
 npm run dev
 
 cd ../client
@@ -18,39 +20,40 @@ npm run dev
 
 - App: http://localhost:5173
 - API: http://localhost:5000
+- Login (after seed): `admin@nexora.local` / `Admin@123`
 
-Demo login after seed: `admin@nexora.local` / `Admin@123`
+## 1) Backend on Render (required)
 
-## MongoDB Atlas
+1. Go to [render.com](https://render.com) → New → Web Service → connect `Hashir296/Nexora-ERP`
+2. Root Directory: `server`
+3. Build: `npm install`
+4. Start: `npm start`
+5. Add env vars:
 
-Set in `server/.env`:
+| Key | Value |
+|-----|--------|
+| `MONGODB_URI` | your Atlas `mongodb+srv://...` |
+| `CLIENT_URL` | `https://YOUR-VERCEL-APP.vercel.app` |
+| `COOKIE_SECURE` | `true` |
+| `JWT_ACCESS_SECRET` | long random string |
+| `JWT_REFRESH_SECRET` | long random string |
+| `NODE_ENV` | `production` |
+| `GOOGLE_API_KEY` | optional |
 
-```
-MONGODB_URI=mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/nexora-erp?retryWrites=true&w=majority
-```
+6. Atlas Network Access: allow `0.0.0.0/0`
+7. After deploy, open `https://YOUR-API.onrender.com/api/health` — should return healthy JSON
 
-Never commit `.env`.
+## 2) Frontend on Vercel
 
-## Deploy (Vercel frontend)
+1. Vercel → Import `Nexora-ERP`
+2. **Root Directory = `client`** (important)
+3. Framework: Vite · Build: `npm run build` · Output: `dist`
+4. Env:
+   - `VITE_API_URL` = `https://YOUR-API.onrender.com` (no trailing slash)
+5. Redeploy
 
-1. Push this repo to GitHub.
-2. In Vercel → Import → Root Directory = `client`
-3. Build: `npm run build` · Output: `dist`
-4. Env var: `VITE_API_URL=https://YOUR-API-HOST` (no trailing slash)
-5. Deploy
+If you already deployed the whole repo / server and got a serverless crash: change Root Directory to `client`, set `VITE_API_URL`, redeploy.
 
-## Deploy (API backend)
+## GitHub
 
-Vercel is for the React app. Host Express separately (Render / Railway / Fly):
-
-1. Root or service directory = `server`
-2. Start: `npm start` (or `node src/server.js`)
-3. Env vars:
-   - `MONGODB_URI` (Atlas)
-   - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`
-   - `CLIENT_URL=https://your-app.vercel.app` (comma-separate with localhost if needed)
-   - `COOKIE_SECURE=true`
-   - `GOOGLE_API_KEY` (optional)
-   - `NODE_ENV=production`
-
-Atlas Network Access: allow `0.0.0.0/0` (or your host IPs).
+https://github.com/Hashir296/Nexora-ERP
