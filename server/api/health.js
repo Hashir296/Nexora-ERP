@@ -2,9 +2,7 @@
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   try {
-    const path = require('path');
-    module.paths.unshift(path.join(__dirname, '..', 'server', 'node_modules'));
-    const connectDB = require('../server/src/config/db');
+    const connectDB = require('../src/config/db');
     await Promise.race([
       connectDB(),
       new Promise((_, r) => setTimeout(() => r(new Error('Mongo timeout')), 8000)),

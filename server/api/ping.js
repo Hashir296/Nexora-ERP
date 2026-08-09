@@ -1,4 +1,4 @@
-/** Instant ping — no DB, no Express */
+/** Instant — no deps */
 module.exports = (req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
