@@ -17,8 +17,8 @@ async function connectDB() {
     .connect(config.mongoUri, {
       bufferCommands: false,
       maxPoolSize: 5,
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 3000,
+      connectTimeoutMS: 3000,
     })
     .then((conn) => {
       console.log(`MongoDB connected: ${conn.connection.name}`);

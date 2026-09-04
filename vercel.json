@@ -1,6 +1,8 @@
 {
-  "installCommand": "npm install --prefix server",
-  "buildCommand": "mkdir -p public && echo Nexora API > public/index.html",
-  "outputDirectory": "public",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+  "installCommand": "npm install --prefix server && npm install --prefix client",
+  "buildCommand": "npm run build --prefix client",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

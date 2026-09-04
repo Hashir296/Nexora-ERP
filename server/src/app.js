@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const config = require('./config');
 const { errorHandler } = require('./utils/api');
@@ -34,8 +32,10 @@ function createApp() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
   );
-  app.use(compression());
-  app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
+  if (!process.env.VERCEL) {
+    app.use(require('compression')());
+    app.use(require('morgan')(config.env === 'production' ? 'combined' : 'dev'));
+  }
   app.use(
     cors({
       origin(origin, callback) {
