@@ -50,8 +50,28 @@ async function waitForMongo() {
   if (result instanceof Error) throw result;
 }
 
+/**
+ * Vercel does not register api/[...path].js on this project (those URLs 404).
+ * vercel.json rewrites /api/* to /api/gateway?path=... so restore the real path.
+ */
+function applyForwardedPath(req) {
+  const raw = String(req.url || '');
+  const qIndex = raw.indexOf('?');
+  const pathname = (qIndex === -1 ? raw : raw.slice(0, qIndex)).replace(/\/+$/, '') || '/';
+  if (pathname !== '/api/gateway' && pathname !== '/gateway') return;
+
+  const params = new URLSearchParams(qIndex === -1 ? '' : raw.slice(qIndex + 1));
+  const forwarded = params.get('path');
+  if (!forwarded) return;
+  params.delete('path');
+  const extra = params.toString();
+  const next = '/api/' + forwarded.replace(/^\/+/, '');
+  req.url = extra ? `${next}?${extra}` : next;
+}
+
 module.exports = async function vercelHandler(req, res) {
   applyCors(req, res);
+  applyForwardedPath(req);
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
